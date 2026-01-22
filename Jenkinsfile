@@ -20,7 +20,7 @@ pipeline {
             steps {
                 echo 'Starting Docker containers...'
                 bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
-                bat 'timeout /t 5 /nobreak'
+                bat 'powershell -Command "Start-Sleep -Seconds 5"'
             }
         }
         
