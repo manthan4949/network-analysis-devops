@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: network-analysis-app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:///network_analysis.db
+    volumes:
+      - .:/app
+    command: python app.py
+    networks:
+      - app-network
+
+  db:
+    image: sqlite
+    container_name: network-analysis-db
+    volumes:
+      - db-volume:/var/lib/sqlite
+    networks:
+      - app-network
+
+volumes:
+  db-volume:
+
+networks:
+  app-network:
+    driver: bridge
