@@ -17,12 +17,12 @@ pipeline {
         }
         
         stage('Start Application') {
-            steps {
-                echo 'Starting Docker containers...'
-                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
-                bat 'powershell -Command "Start-Sleep -Seconds 5"'
-            }
-        }
+    steps {
+        echo 'Starting Docker containers...'
+        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
+        bat 'ping localhost -n 6 >nul'
+    }
+}
         
         stage('Test Application') {
             steps {
