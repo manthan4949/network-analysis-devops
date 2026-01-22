@@ -12,14 +12,14 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                bat 'docker build -t network-analysis-app .'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" build -t network-analysis-app .'
             }
         }
         
         stage('Start Application') {
             steps {
                 echo 'Starting Docker containers...'
-                bat 'docker-compose up -d'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
                 bat 'timeout /t 5 /nobreak'
             }
         }
@@ -27,6 +27,7 @@ pipeline {
         stage('Test Application') {
             steps {
                 echo 'Testing application endpoint...'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
                 bat 'curl http://localhost:5000 || echo "Testing health check"'
             }
         }
@@ -34,7 +35,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Stopping Docker containers...'
-                bat 'docker-compose down'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down'
             }
         }
     }
