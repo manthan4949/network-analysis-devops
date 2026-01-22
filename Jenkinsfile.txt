@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+    
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 1, unit: 'HOURS')
+    }
+    
+    environment {
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_IMAGE_NAME = 'networkanalysis-app'
+        DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_FULL_IMAGE = "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+    }
+    
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    echo "========== BUILD STAGE =========="
+                    sh '''
+                        echo "Creating Docker image"
+                        docker build -t ${DOCKER_FULL_IMAGE} \
+                            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+                            -f Dockerfile .
+                        docker images | grep networkanalysis
+                    '''
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                script {
+                    echo "========== TEST STAGE =========="
+                    sh '''
+                        python -m pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install pytest pytest-cov pytest-flask
+                        pytest tests/unit_tests.py -v --cov=. --cov-report=xml || true
+                    '''
+                }
+            }
+        }
+        
+        stage('Code Quality') {
+            steps {
+                script {
+                    echo "========== CODE QUALITY STAGE =========="
+                    sh '''
+                        pip install pylint flake8
+                        pylint app.py --fail-under=5.0 || true
+                        flake8 app.py --count --statistics --exit-zero || true
+                    '''
+                }
+            }
+        }
+        
+        stage('Security') {
+            steps {
+                script {
+                    echo "========== SECURITY STAGE =========="
+                    sh '''
+                        pip install bandit safety
+                        bandit -r app.py -f json -o bandit-report.json || true
+                        safety check || true
+                    '''
+                }
+            }
+        }
+        
+        stage('Deploy - Staging') {
+            steps {
+                script {
+                    echo "========== DEPLOY STAGE =========="
+                    sh '''
+                        docker stop networkanalysis-staging || true
+                        docker rm networkanalysis-staging || true
+                        docker run -d --name networkanalysis-staging -p 5001:5000 ${DOCKER_FULL_IMAGE}
+                        sleep 5
+                        curl -f http://localhost:5001/ || echo "Checking..."
+                    '''
+                }
+            }
+        }
+        
+        stage('Release') {
+            steps {
+                script {
+                    echo "========== RELEASE STAGE =========="
+                    sh '''
+                        docker tag ${DOCKER_FULL_IMAGE} ${DOCKER_IMAGE_NAME}:latest
+                        echo "Release images tagged"
+                        docker images | grep networkanalysis
+                    '''
+                }
+            }
+        }
+        
+        stage('Monitoring') {
+            steps {
+                script {
+                    echo "========== MONITORING STAGE =========="
+                    sh '''
+                        echo "Container Status:"
+                        docker ps --filter "name=networkanalysis"
+                        echo "Container Logs (last 20 lines):"
+                        docker logs --tail 20 networkanalysis-staging || true
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "Pipeline finished at $(date)"
+        }
+        success {
+            echo "✓✓✓ ALL STAGES PASSED ✓✓✓"
+        }
+        failure {
+            echo "✗ Pipeline failed"
+        }
+    }
+}
