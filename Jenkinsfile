@@ -17,12 +17,11 @@ pipeline {
         }
         
         stage('Start Application') {
-    steps {
-        echo 'Starting Docker containers...'
-        bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
-        bat 'ping localhost -n 6 >nul'
-    }
-}
+            steps {
+                echo 'Starting Docker containers...'
+                bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d'
+            }
+        }
         
         stage('Test Application') {
             steps {
