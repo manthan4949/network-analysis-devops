@@ -23,11 +23,10 @@ pipeline {
             }
         }
         
-        stage('Test Application') {
+        stage('Verify Running') {
             steps {
-                echo 'Testing application endpoint...'
+                echo 'Verifying containers are running...'
                 bat '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" ps'
-                bat 'curl http://localhost:5000 || echo "Testing health check"'
             }
         }
         
@@ -40,11 +39,6 @@ pipeline {
     }
     
     post {
-        always {
-            echo '================================'
-            echo 'Pipeline execution completed!'
-            echo '================================'
-        }
         success {
             echo '✅ All stages passed successfully!'
         }
